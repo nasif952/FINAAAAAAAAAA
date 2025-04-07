@@ -1,723 +1,727 @@
 # DiamondAI - Comprehensive Project Documentation
 
+**Version**: 1.1 (Updated YYYY-MM-DD) - Reflects refactoring of Valuation Analysis data source.
+
 ## Table of Contents
 1. [Project Overview](#project-overview)
-2. [Technical Stack](#technical-stack)
-3. [Project Structure](#project-structure)
-4. [Core Features & Implementation](#core-features--implementation)
-5. [Database Architecture](#database-architecture)
-6. [State Management](#state-management)
-7. [Components Architecture](#components-architecture)
-8. [Valuation System](#valuation-system)
-9. [Benchmarking System](#benchmarking-system)
-10. [Performance Tracking](#performance-tracking)
-11. [Authentication](#authentication)
-12. [Data Room System](#data-room-system)
+2. [Target Audience](#target-audience)
+3. [Key Value Proposition](#key-value-proposition)
+4. [Technical Stack](#technical-stack)
+5. [Project Structure](#project-structure)
+6. [Setup & Installation](#setup--installation)
+7. [Environment Variables](#environment-variables)
+8. [Core Features & Implementation](#core-features--implementation)
+    *   [Valuation System](#valuation-system)
+    *   [Benchmarking System](#benchmarking-system)
+    *   [Cap Table Management](#cap-table-management)
+    *   [Financial Overview & Performance Tracking](#financial-overview--performance-tracking)
+    *   [Data Room System (Storage API Based)](#data-room-system-storage-api-based)
+    *   [Authentication](#authentication)
+    *   [Pitch Deck Analysis](#pitch-deck-analysis)
+    *   [Settings](#settings)
+9. [Database Architecture](#database-architecture)
+    *   [Supabase Tables Detailed](#supabase-tables-detailed)
+    *   [Table Relationships](#table-relationships)
+    *   [Row-Level Security (RLS)](#row-level-security-rls)
+    *   [Supabase Storage](#supabase-storage)
+10. [State Management](#state-management)
+    *   [TanStack Query (React Query)](#tanstack-query-react-query)
+    *   [React Context API](#react-context-api)
+    *   [Local Component State (useState)](#local-component-state-usestate)
+11. [Components Architecture](#components-architecture)
+    *   [Component Types](#component-types)
+    *   [Key Components Deep Dive](#key-components-deep-dive)
+12. [Routing](#routing)
 13. [Integration Points](#integration-points)
+    *   [Supabase Integration](#supabase-integration)
 14. [Development Practices](#development-practices)
+    *   [Coding Style & Linting](#coding-style--linting)
+    *   [Error Handling](#error-handling)
+    *   [Form Validation](#form-validation)
+    *   [API/Data Layer Interaction](#apidata-layer-interaction)
+15. [Deployment](#deployment)
+16. [Potential Future Enhancements](#potential-future-enhancements)
+17. [Glossary](#glossary)
 
-## Project Overview
+---
 
-DiamondAI is a comprehensive startup management platform designed to help founders track metrics, manage valuations, and handle investor relations. The application's standout feature is its multi-faceted valuation methodology that combines five different approaches to provide a balanced startup valuation.
+## 1. Project Overview
 
-### Business Logic
+DiamondAI (DAISolution) is a sophisticated, web-based platform designed to empower startup founders and teams. It provides a centralized suite of tools for managing critical aspects of a startup's lifecycle, including financial tracking, performance benchmarking, valuation analysis, cap table management, and secure document sharing for investor relations and due diligence.
 
-The core business logic centers on:
-- Generating accurate startup valuations through multiple methodologies
-- Tracking and benchmarking financial metrics over time
-- Managing cap tables and investor relationships
-- Providing data-driven insights for decision-making
-- Facilitating due diligence processes
-- Secure document management via a dedicated Data Room feature
+The platform distinguishes itself through a robust, multi-methodology valuation engine, offering users a more holistic and data-driven understanding of their company's worth compared to single-method approaches.
 
-## Technical Stack
+## 2. Target Audience
+
+-   Early-stage startup founders (Pre-seed, Seed, Series A)
+-   Startup executive teams (CEO, CFO, COO)
+-   Venture Capitalists and Angel Investors (potentially through dedicated views or reports)
+-   Startup advisors and consultants
+
+## 3. Key Value Proposition
+
+-   **Comprehensive Valuation:** Provides a reliable valuation range using five distinct, industry-recognized methodologies, weighted by company stage.
+-   **Data-Driven Insights:** Enables tracking of key financial and operational metrics over time.
+-   **Benchmarking:** Allows startups to compare their performance against relevant industry benchmarks.
+-   **Centralized Management:** Offers tools for cap table management, investor relations, and secure document sharing in one platform.
+-   **Streamlined Due Diligence:** Facilitates the due diligence process through an organized Data Room feature.
+
+## 4. Technical Stack
+
+The project leverages a modern, type-safe technology stack chosen for developer productivity, performance, and scalability.
 
 ### Frontend
-- **React 18.3.1**: Core UI library
-- **TypeScript**: For type safety across the codebase
-- **Vite 5.4.1**: Build tool and development server
-- **TailwindCSS 3.4.11**: Utility-first CSS framework for styling
-- **shadcn/ui**: Component library based on Radix UI primitives
-- **Lucide Icons**: SVG icon library for consistent iconography
-- **React Router 6.26.2**: For application routing
+-   **React 18.3.1**: Core JavaScript library for building the user interface declaratively.
+-   **TypeScript**: Enhances JavaScript with static typing for improved code quality, maintainability, and developer experience, catching errors during development.
+-   **Vite 5.4.1**: Next-generation frontend tooling providing extremely fast Hot Module Replacement (HMR) for development and optimized builds for production.
+-   **TailwindCSS 3.4.11**: A utility-first CSS framework enabling rapid UI development by composing utility classes directly in the markup. Configured via `tailwind.config.js`.
+-   **shadcn/ui**: A collection of beautifully designed, accessible, and customizable UI components built on top of Radix UI primitives and styled with TailwindCSS. Components are added via CLI and become part of the local codebase. Found in `src/components/ui/`.
+-   **Lucide Icons**: A large, consistent, and tree-shakable SVG icon library. Used throughout the UI for visual cues.
+-   **React Router 6.26.2**: Standard library for handling client-side routing within the React application. Manages URL changes and renders corresponding page components.
 
 ### State Management & Data Fetching
-- **TanStack Query 5.56.2**: For data fetching, caching, and state management
-- **React Context API**: For global state (auth, theme, etc.)
-- **Zod 3.23.8**: Schema validation library for form and data validation
-- **React Hook Form 7.53.0**: Form handling with validation integration
+-   **TanStack Query (React Query) 5.56.2**: Powerful asynchronous state management library. Used extensively for fetching, caching, synchronizing, and updating server state (data from Supabase). Manages loading states, error handling, retries, and background updates. See [State Management](#state-management) section for patterns.
+-   **React Context API**: Used sparingly for truly global state that doesn't change often, such as authentication status (`AuthContext`) and potentially theme settings.
+-   **Zod 3.23.8**: TypeScript-first schema declaration and validation library. Used with React Hook Form to validate form inputs and potentially API responses/requests. Schemas are defined in `src/schemas/`.
+-   **React Hook Form 7.53.0**: Performant, flexible, and extensible library for managing form state and validation. Integrates seamlessly with Zod via `@hookform/resolvers`.
 
 ### Data Visualization
-- **Recharts 2.15.1**: For creating responsive charts and graphs
+-   **Recharts 2.15.1**: A composable charting library built on React components. Used for rendering bar charts, line charts, etc., in the Financial Overview and Valuation Analysis sections.
 
 ### Backend & Database
-- **Supabase 2.49.3**: Backend-as-a-Service platform providing:
-  - PostgreSQL database
-  - Authentication services
-  - Row-level security
-  - Real-time subscriptions
-  - Storage solutions for file management (used directly by the Data Room feature)
+-   **Supabase 2.49.3**: Open-source Firebase alternative providing a suite of backend tools built around a PostgreSQL database.
+    -   **PostgreSQL Database**: Robust, relational database storing all application data (companies, valuations, users, metrics, etc.).
+    -   **Authentication**: Handles user sign-up, login, session management, and password recovery using Supabase Auth.
+    -   **Row-Level Security (RLS)**: Database-level security policies ensuring users can only access data they are permitted to see.
+    -   **Storage**: Provides S3-compatible object storage. Used directly by the [Data Room System](#data-room-system-storage-api-based) for file uploads, downloads, and organization without relying on intermediate database tables for listing.
+    -   **Realtime (Optional)**: Supabase offers real-time capabilities via PostgreSQL subscriptions, which could be leveraged for features like live notifications (currently not heavily used).
+    -   **Edge Functions (Optional)**: Serverless functions for custom backend logic (currently not heavily used).
 
-## Project Structure
+## 5. Project Structure
 
-The project follows a feature-based organization with shared components and utilities:
+The project follows a hybrid approach, primarily feature-based within `pages` and `components`, with shared logic and utilities separated.
 
 ```
 src/
-├── components/             # Reusable UI components
-│   ├── ui/                 # Basic UI elements from shadcn/ui
-│   ├── valuation/          # Valuation-specific components
-│   ├── settings/           # Settings-related components
-│   ├── pitch-deck/         # Pitch deck analysis components
-│   ├── performance/        # Performance tracking components
-│   ├── investor/           # Investor-related components
-│   ├── dialogs/            # Modal dialogs and popups
-│   │   ├── AddDocumentDialog.tsx     # File upload dialog (Data Room)
-│   │   ├── CreateFolderDialog.tsx    # Folder creation dialog (Data Room)
-│   │   └── EditDocumentMetadataDialog.tsx  # (Potentially reusable, not primary in Data Room)
-│   ├── Button.tsx          # Custom button component
-│   ├── TopBar.tsx          # Application top navigation bar
-│   ├── SidebarNav.tsx      # Application sidebar navigation
-│   ├── Card.tsx            # Card container component
-│   ├── StepProgress.tsx    # Progress indicator for multi-step processes
-│   ├── DataTable.tsx       # Table component for data display
-│   ├── AuthGuard.tsx       # Authentication protection wrapper
-│   ├── Layout.tsx          # Main application layout
-│   └── ProgressBar.tsx     # Progress visualization component
+├── App.css                 # Minimal global styles, prefer Tailwind utilities.
+├── App.tsx                 # Root application component: Sets up routing and context providers.
 │
-├── contexts/               # React contexts for global state
-│   └── AuthContext.tsx     # Authentication state management
+├── components/             # Reusable UI components, organized by feature or type.
+│   ├── AuthGuard.tsx       # Wrapper component to protect routes requiring authentication.
+│   ├── Button.tsx          # Potentially customized Button extending shadcn/ui Button.
+│   ├── Card.tsx            # Standardized card layout component.
+│   ├── DataTable.tsx       # Reusable table component for displaying data (e.g., Cap Table).
+│   ├── Layout.tsx          # Main application layout (Sidebar, Topbar, Content area).
+│   ├── ProgressBar.tsx     # Generic progress bar component.
+│   ├── SidebarNav.tsx      # Renders the main navigation links in the sidebar.
+│   ├── StepProgress.tsx    # Component for visualizing steps in a process (e.g., questionnaire).
+│   ├── TopBar.tsx          # Application header/top navigation bar.
+│   │
+│   ├── dialogs/            # Modal dialog components.
+│   │   ├── AddDocumentDialog.tsx     # Dialog for uploading files in the Data Room.
+│   │   ├── CreateFolderDialog.tsx    # Dialog for creating folders in the Data Room.
+│   │   └── EditDocumentMetadataDialog.tsx  # (Potentially unused/generic).
+│   │
+│   ├── investor/           # Components specific to investor features.
+│   ├── performance/        # Components related to performance metric tracking tabs.
+│   │   ├── CustomMetricsTab.tsx    # Tab content for viewing/defining metrics.
+│   │   ├── DefaultMetricsTab.tsx   # Tab content for updating metric values.
+│   │   └── PerformanceTab.tsx      # Tab content for viewing historical performance.
+│   │
+│   ├── pitch-deck/         # Components for the Pitch Deck Analysis feature.
+│   ├── settings/           # Components used within the Settings page.
+│   ├── valuation/          # Components specific to the Valuation Analysis feature.
+│   │   ├── BenchmarkComparisonCard.tsx # Card comparing user data to benchmarks.
+│   │   └── EditableBenchmarks.tsx  # Component for users to potentially edit benchmarks.
+│   │
+│   └── ui/                 # Raw shadcn/ui components added via CLI (Button, Input, etc.).
 │
-├── hooks/                  # Custom React hooks
-│   ├── useValuation.ts     # Valuation data management
-│   ├── useStartupScore.ts  # Scoring calculation and management
-│   ├── useQuestionnaireData.ts # Questionnaire data handling
-│   ├── useSettingsData.ts  # User settings management
-│   ├── useFileUpload.ts    # General file upload hook (may differ from Data Room specifics)
-│   ├── useCompanyForm.ts   # Company form handling
-│   ├── use-mobile.tsx      # Responsive design helper
-│   └── use-toast.ts        # Toast notification management
+├── contexts/               # React Context providers for global state.
+│   └── AuthContext.tsx     # Manages authentication state, user data, login/logout functions.
 │
-├── lib/                    # Core business logic & utilities
-│   ├── valuationCalculator.ts # Valuation algorithm implementations
-│   ├── calculateScore.ts   # Scoring system implementation
-│   ├── formatters.ts       # Data formatting utilities
-│   └── utils.ts            # General utility functions
+├── hooks/                  # Custom React Hooks encapsulating reusable logic.
+│   ├── useCompanyForm.ts   # Hook for managing the company details form state and submission.
+│   ├── useFileUpload.ts    # Potentially a generic file upload hook (Data Room uses direct Supabase calls).
+│   ├── useQuestionnaireData.ts # Manages state and interaction logic for the valuation questionnaire.
+│   ├── useSettingsData.ts  # Hook for managing user/application settings.
+│   ├── useStartupScore.ts  # Core hook for the Benchmarking feature; fetches data, calculates scores.
+│   ├── useValuation.ts     # Core hook for the Valuation Analysis feature; fetches data, triggers calculations, manages state.
+│   ├── use-mobile.tsx      # Helper hook to detect if the application is viewed on a mobile device.
+│   └── use-toast.ts        # Facade for displaying toast notifications using shadcn/ui Toast.
 │
-├── pages/                  # Application routes and pages
-│   ├── valuation/          # Valuation-related page components
-│   │   ├── ValuationContent.tsx  # Main valuation display
-│   │   ├── BenchmarksContent.tsx # Benchmarking interface
-│   │   ├── QuestionnaireContent.tsx # Valuation questionnaire
-│   │   └── HistoryContent.tsx    # Valuation history tracking
-│   ├── Auth.tsx            # Authentication pages (login/signup)
-│   ├── CapTable.tsx        # Cap table management
-│   ├── Dashboard.tsx       # Main application dashboard
-│   ├── Valuation.tsx       # Valuation page wrapper
-│   ├── Settings.tsx        # User and company settings
-│   ├── Performance.tsx     # (DEPRECATED - Functionality moved to FinancialOverview)
-│   ├── PitchDeckAnalysis.tsx # Pitch deck review tools
-│   ├── InvestorDashboard.tsx # Investor-facing dashboard
-│   ├── FinancialOverview.tsx # Financial data overview & performance tracking
-│   ├── DueDiligence.tsx    # Due diligence process management
-│   ├── Data.tsx            # Secure document sharing (uses Supabase Storage API)
-│   ├── Index.tsx           # Landing/home page
-│   └── NotFound.tsx        # 404 error page
+├── integrations/           # Configuration and clients for external services.
+│   └── supabase/           # Supabase specific integration files.
+│       ├── client-extension.ts # Potentially extends the Supabase client (if needed).
+│       ├── client.ts       # Initializes and exports the Supabase JavaScript client instance.
+│       └── types.ts        # Auto-generated TypeScript definitions for the Supabase database schema (`supabase gen types typescript ...`). Crucial for type safety.
 │
-├── integrations/           # External service integrations
-│   └── supabase/           # Supabase integration
-│       ├── client.ts       # Supabase client initialization
-│       ├── client-extension.ts # Extended client functionality (if used)
-│       └── types.ts        # TypeScript definitions for database (auto-generated)
+├── lib/                    # Core application logic, utilities, and algorithms.
+│   ├── calculateScore.ts   # Implements the startup scoring algorithm for Benchmarking.
+│   ├── formatters.ts       # Utility functions for formatting data (currency, percentages, dates).
+│   ├── utils.ts            # General utility functions not specific to a feature.
+│   └── valuationCalculator.ts # Contains the algorithms for the five valuation methodologies.
 │
-├── schemas/                # Data validation schemas
-│   └── companySchema.ts    # Company data validation
+├── pages/                  # Top-level route components, defining application pages.
+│   ├── Auth.tsx            # Login/Signup page component.
+│   ├── CapTable.tsx        # Page for managing the capitalization table.
+│   ├── Dashboard.tsx       # Main application dashboard after login.
+│   ├── Data.tsx            # Data Room page for secure document management.
+│   ├── DueDiligence.tsx    # Page related to due diligence processes.
+│   ├── FinancialOverview.tsx # Central page for viewing financial metrics, performance history, and updating metrics via tabs.
+│   ├── Index.tsx           # Landing page or initial route.
+│   ├── InvestorDashboard.tsx # Dashboard view potentially tailored for investors.
+│   ├── NotFound.tsx        # 404 Page Not Found component.
+│   ├── Performance.tsx     # DEPRECATED - Functionality merged into FinancialOverview.tsx.
+│   ├── PitchDeckAnalysis.tsx # Page for pitch deck analysis features.
+│   ├── Settings.tsx        # Page for user and company settings.
+│   ├── Valuation.tsx       # Wrapper page potentially containing valuation sub-routes/tabs.
+│   │
+│   └── valuation/          # Sub-components specifically used within the Valuation section/pages.
+│       ├── BenchmarksContent.tsx # Renders the Benchmarking UI (scores, comparisons).
+│       ├── HistoryContent.tsx    # Displays historical valuation data.
+│       ├── QuestionnaireContent.tsx # Renders the multi-step valuation questionnaire form.
+│       └── ValuationContent.tsx  # Renders the main valuation analysis results (slider, charts).
 │
-├── utils/                  # Utility functions (consider merging with lib/ or specific features)
+├── schemas/                # Zod validation schemas.
+│   └── companySchema.ts    # Zod schema for validating company form data.
 │
-├── App.tsx                 # Application root component
-├── App.css                 # Global styles (less preferred)
-├── index.css               # TailwindCSS imports & base styles
-├── main.tsx                # Application entry point
-└── vite-env.d.ts           # Vite environment type definitions
+├── utils/                  # Generic utility functions (Consider merging into `lib/utils.ts`).
+│
+├── index.css               # Entry point for CSS; includes TailwindCSS base, components, and utilities directives.
+├── main.tsx                # Main application entry point; renders the root App component into the DOM.
+└── vite-env.d.ts           # TypeScript definitions for Vite environment variables.
 ```
 
-## Core Features & Implementation
+## 6. Setup & Installation
+
+Follow these steps to set up the project locally:
+
+1.  **Prerequisites:**
+    *   Node.js (Version >= 18.x recommended)
+    *   npm or yarn package manager
+    *   Access to the Supabase project (URL and Anon Key)
+
+2.  **Clone the Repository:**
+    ```bash
+    git clone <repository-url>
+    cd <project-directory>
+    ```
+
+3.  **Install Dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+4.  **Environment Variables:**
+    *   Create a `.env` file in the root directory of the project.
+    *   Copy the contents of `.env.example` (if it exists) or add the required variables (see [Environment Variables](#environment-variables) section below).
+    *   Populate the `.env` file with your specific Supabase project URL and Anon Key. **Never commit your `.env` file to version control.**
+
+5.  **Generate Supabase Types (Optional but Recommended):**
+    *   Ensure you have the Supabase CLI installed (`npm install supabase --save-dev`).
+    *   Log in to the Supabase CLI (`npx supabase login`).
+    *   Link your project (`npx supabase link --project-ref <your-project-id>`).
+    *   Generate the types:
+        ```bash
+        npx supabase gen types typescript --linked > src/integrations/supabase/types.ts
+        ```
+    *   This step ensures type safety when interacting with the database via the Supabase client.
+
+6.  **Run the Development Server:**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+    The application should now be running, typically at `http://localhost:5173` (Vite's default).
+
+## 7. Environment Variables
+
+The application requires the following environment variables to be set, typically in a `.env` file in the project root for local development. These **must** be configured in the Vercel project settings for deployment.
+
+-   **`VITE_SUPABASE_URL`**: The unique URL for your Supabase project. Found in your Supabase project settings (API -> Project URL).
+-   **`VITE_SUPABASE_ANON_KEY`**: The public "anon" key for your Supabase project. Found in your Supabase project settings (API -> Project API Keys -> `anon` `public`). This key is safe to expose in the frontend code as Row Level Security protects your data.
+
+**`.env` File Example:**
+
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-key...........
+```
+
+*Note: Vite exposes environment variables prefixed with `VITE_` to the client-side code. Do not store sensitive secrets (like Supabase service keys) using this prefix.*
+
+## 8. Core Features & Implementation
 
 ### Valuation System
 
-The valuation system is the cornerstone of the application, implementing five different valuation methodologies:
+**Goal:** To provide a comprehensive and justifiable startup valuation using multiple methodologies.
 
-1. **Scorecard Method**: Compares the startup to similar funded companies with adjustment factors for team strength, market opportunity, etc.
-2. **Checklist Method**: Evaluates the startup against a comprehensive list of success criteria
-3. **Venture Capital Method**: Calculates valuation based on expected ROI and potential exit value
-4. **DCF with Long-Term Growth**: Discounted cash flow analysis with terminal growth assumptions
-5. **DCF with Multiples**: Discounted cash flow analysis with industry-specific multiples
+**Key Components:**
+-   `src/pages/valuation/ValuationContent.tsx`: Main UI for displaying results (slider, 5-method chart, weights, financial inputs).
+-   `src/pages/valuation/QuestionnaireContent.tsx`: UI for the multi-step questionnaire (input for Benchmarking system).
+-   `src/hooks/useValuation.ts`: Hook managing data fetching (valuation, company), state (loading, error, calculation status, *calculated method results*), and orchestrating calculations/updates.
+-   `src/hooks/useQuestionnaireData.ts`: Hook managing state and interactions specifically for the questionnaire form.
+-   `src/lib/valuationCalculator.ts`: Contains the core calculation logic for the 5 valuation methods and the combined weighting/normalization.
 
-#### Implementation Details
+**Data Flow (Valuation Analysis Tab):**
+1.  `ValuationContent.tsx` mounts and uses `useValuation`.
+2.  `useValuation` fetches the latest `valuations` record and associated `companies` data from Supabase using TanStack Query (`queryKey: ['valuation']`).
+3.  The UI displays the fetched data (e.g., `selected_valuation` on the slider, company details). The 5-method chart initially shows mock data or results from the last calculation stored in `useValuation`'s local state.
+4.  User clicks "Recalculate".
+5.  `ValuationContent.tsx` calls `recalculateValuation()` from `useValuation`.
+6.  `useValuation` triggers the `recalculateValuationMutation`.
+7.  The mutation **no longer uses questionnaire data**. It takes the existing `valuationData` and `companyData` (fetched in step 2) and passes them to `calculateValuation` in `valuationCalculator.ts`.
+8.  `valuationCalculator.ts`:
+    *   `calculateValuation` receives the DB data.
+    *   It calls the 5 internal calculation methods (`calculateScorecardMethod`, `calculateChecklistMethod`, etc.), **each now rewritten** to use fields from the input `valuationData` and `companyData` (e.g., `last_revenue`, `annual_roi`, `stage`, `total_employees`, `last_year_ebitda`, `industry_multiple`) instead of parsing questionnaire responses.
+    *   It calculates the `combinedValuation` based on stage-specific weights (`getDefaultWeights`) applied to the results of the 5 methods (after normalization).
+    *   It returns the `ValuationResults` object containing the individual method values and weights.
+9.  `useValuation`'s Mutation:
+    *   Receives the `ValuationResults` back from `calculateValuation`.
+    *   Updates its *local state* (`valuationMethods`) with the detailed results using `setValuationMethods`. This makes the 5-method chart update.
+    *   Calls `updateValuationWithResults` to save the *updated `selected_valuation`* (and related pre/post-money values) back to the `valuations` table in Supabase. **Note:** It does *not* save the individual method breakdown to the DB.
+    *   On success, invalidates the `['valuation']` query cache, causing a refetch of the main valuation data (step 2) to ensure consistency.
 
-- **Calculation Engine**: `src/lib/valuationCalculator.ts` (682 lines) contains all valuation algorithms and normalization logic
-- **Questionnaire System**: `src/hooks/useQuestionnaireData.ts` manages questionnaire state and responses
-- **Valuation State**: `src/hooks/useValuation.ts` provides valuation data and methods for the UI
-- **Weighting System**: Each method is weighted based on company stage (pre-seed, seed, growth, etc.)
-- **Visual Representation**: `src/pages/valuation/ValuationContent.tsx` renders interactive valuation charts and sliders
-
-#### Valuation Data Flow
-1. User completes questionnaire via `QuestionnaireContent.tsx`
-2. `useValuation` hook triggers calculation via `calculateValuation` function
-3. `valuationCalculator.ts` processes inputs through each methodology
-4. Results are normalized to handle extreme value differences
-5. Combined valuation is calculated using weighted average
-6. Results are stored in Supabase `valuations` table
-7. UI updates with interactive visualization in `ValuationContent.tsx`
+**Key Distinction:** The "Valuation Analysis" tab's calculations are driven by data fields editable elsewhere (likely Settings or Update Metrics), **not** the valuation questionnaire.
 
 ### Benchmarking System
 
-The benchmarking system allows startups to compare their metrics against industry standards:
+**Goal:** To allow startups to compare their performance against industry standards and understand their relative strengths/weaknesses.
 
-- **Implementation**: `src/pages/valuation/BenchmarksContent.tsx` and `src/hooks/useStartupScore.ts`
-- **Metrics Tracked**: Revenue, gross margin, team size, valuation, growth rate, cash on hand, ROI, and market size
-- **Scoring Algorithm**: Compares user values against benchmarks with category weighting
-- **Performance Score**: Aggregated score (0-100) with breakdowns by category
+**Key Components:**
+-   `src/pages/valuation/BenchmarksContent.tsx`: Main UI displaying the overall startup score, category scores, metric breakdowns, and comparisons to benchmarks.
+-   `src/hooks/useStartupScore.ts`: Core hook fetching necessary data (company, valuation, performance metrics, *questionnaire data*), triggering score calculations, and managing state.
+-   `src/lib/calculateScore.ts`: Contains the algorithm for calculating the overall score and category scores based on comparing startup data against benchmarks.
+-   `src/components/valuation/BenchmarkComparisonCard.tsx`: Component displaying industry benchmarks.
+-   `src/components/valuation/EditableBenchmarks.tsx`: Allows users to potentially override default benchmarks (uses `user_benchmarks` table).
 
-### Data Sources and Priority
+**Data Flow & Sources:**
+1.  `BenchmarksContent.tsx` mounts and uses `useStartupScore`.
+2.  `useStartupScore` fetches data using TanStack Query:
+    *   Company data (`queryKey: ['company-data']`) from `companies` table.
+    *   Valuation data (`queryKey: ['valuation-data']`) from `valuations` table.
+    *   Performance metrics (`queryKey: ['performance-metrics-latest']`) from `performance_values` table.
+    *   **Crucially: Questionnaire responses (`queryKey: ['questionnaire_questions']`) from `questionnaire_questions` table.** This is fetched directly when `calculateScore` is called.
+3.  `BenchmarksContent.tsx` (or `useStartupScore` automatically) triggers `calculateScore()` from the hook.
+4.  `useStartupScore` ensures all required data pieces are loaded before calling the *actual* calculation function `calculateStartupScore` in `calculateScore.ts`.
+5.  `calculateScore.ts`:
+    *   `calculateStartupScore` receives `companyData`, `performanceData`, `valuationData`, and direct `questionnaireData`.
+    *   **Data Priority for Scoring:** It explicitly prioritizes data from the **questionnaire** for metrics like revenue, growth rate, team size, etc. If questionnaire data is missing for a specific metric, it falls back to system defaults or potentially other sources (though the docs state fallback to Performance metrics is removed).
+    *   It compares the prioritized startup data against benchmark values (either defaults or from the `user_benchmarks` table).
+    *   It calculates individual metric scores, category scores (Finance, Team, Growth, Market, Product), and the overall `totalScore`.
+    *   Returns the detailed `ScoreData` object.
+6.  `useStartupScore` updates its state with the calculated score.
+7.  `BenchmarksContent.tsx` receives the score data from the hook and renders the visualizations.
 
-The scoring system strictly prioritizes data in the following order:
-1. Questionnaire inputs - Values from the valuation questionnaire are used as the primary source of truth
-2. Default values - System defaults are used if no questionnaire data is available
-
-The application no longer uses Performance metrics as a fallback source for benchmarking calculations, ensuring that only user-provided questionnaire data or system defaults are used.
-
-### Key Questionnaire Inputs Used
-- Team size (Q1.1 + Q1.6): Combines founders count and employees count
-- Revenue (Q6.1): Annual revenue 
-- Growth rate (Q6.3): Revenue growth rate year-over-year
-- Cash on hand (Q6.4 + Q6.5): Calculated from burn rate × runway
-- Profit margin/ROI (Q6.6): Annual return on investment
-- Market size (Q3.1): Total addressable market
-- Product readiness: Calculated from product stage (Q2.1), product-market fit (Q2.7), and scalability (Q2.9)
-- Expected valuation (Q7.8): User's own valuation expectation
-
-For the most accurate scoring, entrepreneurs should ensure their questionnaire contains complete and up-to-date financial information.
+**Key Distinction:** The Benchmarking system relies heavily on the **Valuation Questionnaire** as the primary source of truth for the metrics being benchmarked.
 
 ### Cap Table Management
 
-The cap table management system helps founders track equity and investments:
+**Goal:** To provide founders with tools to track ownership, investments, and equity dilution.
 
-- **Implementation**: `src/pages/CapTable.tsx` (873 lines)
-- **Features**:
-  - Shareholder management
-  - Funding round tracking
-  - ESOP (Employee Stock Ownership Plan) management
-  - Investment tracking
-  - Share price calculation
-  - Equity dilution visualization
-  - Investor dashboard integration (as a subtab)
+**Key Components:**
+-   `src/pages/CapTable.tsx`: The main page component rendering the cap table UI, including shareholder lists, funding round details, and potentially visualizations.
+-   `src/components/DataTable.tsx`: Likely used to display the shareholder and transaction data in a structured table.
 
-## Database Architecture
+**Functionality:**
+-   Adding/Editing Shareholders (`shareholders` table).
+-   Recording Funding Rounds (`investments` table, potentially linked to `shareholders`).
+-   Calculating share prices and ownership percentages.
+-   Managing Employee Stock Ownership Plans (ESOPs) - details TBC based on implementation.
+-   Visualizing equity distribution and dilution scenarios.
 
-### Supabase Tables
+**Data Interaction:** Primarily interacts with the `shareholders` and `investments` tables in Supabase.
 
-1. **profiles**
-   - Stores user profile information
-   - Linked to auth.users via RLS policies
+### Financial Overview & Performance Tracking
 
-2. **companies**
-   - Central table for company information
-   - Fields: name, industry, founded_year, stage, total_employees, etc.
-   - One-to-many relationship with other entities
+**Goal:** To provide a centralized dashboard for viewing key financial metrics, tracking performance against targets over time, and managing metric definitions.
 
-3. **valuations**
-   - Stores valuation history and calculations
-   - Fields:
-     - selected_valuation: User-selected final valuation
-     - pre_money_valuation: Calculated pre-money value
-     - investment: Current round investment amount
-     - post_money_valuation: Value after investment
-     - valuation_min/max: Range boundaries
-     - annual_roi: Expected annual return on investment
-   - Foreign key to companies table
+**Key Components:**
+-   `src/pages/FinancialOverview.tsx`: Main page container using `Tabs` to organize different sections. Fetches overview data.
+-   `src/components/performance/DefaultMetricsTab.tsx`: Tab content for inputting/updating actual vs. target values for predefined metrics (`performance_values` table).
+-   `src/components/performance/PerformanceTab.tsx`: Tab content for visualizing historical metric trends (likely using data from `performance_values`).
+-   `src/components/performance/CustomMetricsTab.tsx`: Tab content for viewing metric definitions (`performance_metrics` table) and potentially adding custom metrics.
+-   `FinancialMetricCard` (defined within `FinancialOverview.tsx`): Reusable card component to display individual metrics on the Overview tab.
+-   `Recharts`: Used for Bar and Line charts on the Overview tab.
 
-4. **questionnaires**
-   - Stores questionnaire metadata
-   - Linked to valuations via valuation_id
+**Data Flow:**
+1.  `FinancialOverview.tsx` fetches baseline data for the Overview tab (e.g., latest `performance_values` for key metrics).
+2.  When switching tabs:
+    *   **Update Metrics:** `DefaultMetricsTab` likely fetches metrics definitions (`performance_metrics`) and existing values (`performance_values`) for the selected period. It uses mutations (`useMutation`) to save updated values back to the `performance_values` table.
+    *   **Performance History:** `PerformanceTab` fetches historical data from `performance_values` to render charts/tables.
+    *   **Metric Definitions:** `CustomMetricsTab` fetches data from `performance_metrics`.
 
-5. **questionnaire_questions**
-   - Stores individual question responses
-   - Fields: question_number, question, response, response_type
-   - Organized by category (team, product, market, etc.)
-   - Foreign key to questionnaires table
+**Data Interaction:** Primarily interacts with `performance_metrics` and `performance_values` tables.
 
-6. **investments**
-   - Tracks investment rounds and capital
-   - Fields: capital_invested, number_of_shares, investment_date
-   - Foreign key to companies and shareholders tables
+### Data Room System (Storage API Based)
 
-7. **shareholders**
-   - Stores investor information
-   - Fields: name, contact, invested amount, share count, percentage
+**Goal:** Provide a secure and organized way for startups to manage and share documents, typically for due diligence or investor relations.
 
-8. **performance_metrics**: Defines trackable metrics (both default and potentially custom).
-9. **performance_values**: Stores actual metric values over time, linked to `performance_metrics`.
+**Key Distinction:** This feature interacts **directly** with Supabase Storage (`data_room` bucket) for listing, uploading, downloading, and deleting files/folders. It **does not** primarily rely on the `files` or `folders` database tables for browsing structure, although those tables might be used for supplementary metadata if needed elsewhere.
 
-10. **user_benchmarks**
-    - Stores custom benchmark values for each user
-    - Allows personalization of scoring system
+**Key Components:**
+-   `src/pages/Data.tsx`: Main UI for browsing folders and files within the `data_room` bucket.
+-   `src/components/dialogs/AddDocumentDialog.tsx`: Handles file uploads directly to the current path in storage.
+-   `src/components/dialogs/CreateFolderDialog.tsx`: Creates folders by uploading a `.placeholder` file to the desired storage prefix.
 
-11. **folders**
-    - Stores folder structure for the data room
-    - Fields: name, parent_id, owner, created_at
-    - Enables hierarchical organization of files
+**Implementation:**
+-   **Listing:** Uses `supabase.storage.from('data_room').list(currentPath)` to get items. Items without extensions or ending in `/` are typically treated as folders (prefixes).
+-   **Navigation:** `useState` (`currentPath`, `folderPath`) manages the current viewing location within the storage bucket.
+-   **Uploads:** `supabase.storage.from('data_room').upload(filePath, file)`.
+-   **Downloads:** `supabase.storage.from('data_room').download(filePath)`.
+-   **Deletes:** `supabase.storage.from('data_room').remove([paths])`. Handles deleting files or entire folder prefixes.
+-   **State Management:** TanStack Query (`['storage', 'data_room', currentPath]`) manages the state for `list()` calls, providing caching and background updates.
 
-12. **files**
-    - Stores file metadata for uploaded documents
-    - Fields: name, description, folder_id, storage_path, file_size, file_type, owner, created_at
-    - Links to physical files stored in Supabase Storage
+### Authentication
 
-### Row-Level Security
+**Goal:** Securely manage user access to the application.
 
-The application implements Supabase's Row-Level Security for data protection:
+**Key Components:**
+-   `src/pages/Auth.tsx`: UI for login and signup forms.
+-   `src/contexts/AuthContext.tsx`: Context provider managing user session, profile data, login/logout functions, and loading state. Wraps the entire application in `App.tsx`.
+-   `src/components/AuthGuard.tsx`: A wrapper component used in `App.tsx` routing setup. It checks the user's authentication state from `AuthContext`. If the user is not logged in, it redirects them to the `/auth` page.
+-   `Supabase Auth`: The underlying service handling user accounts, sessions, and password management.
 
-```sql
--- Example RLS policy for companies table
-CREATE POLICY "Users can only access their own companies" ON companies
-  FOR ALL USING (auth.uid() IN (
-    SELECT user_id FROM company_users WHERE company_id = id
-  ));
-```
+**Flow:**
+1.  User visits the site. `AuthGuard` checks `AuthContext`.
+2.  If not logged in, user is redirected to `/auth`.
+3.  User submits login/signup form on `Auth.tsx`.
+4.  Form submission calls functions provided by `AuthContext` (e.g., `signInWithPassword`, `signUp`).
+5.  `AuthContext` functions call the corresponding `supabase.auth` methods (e.g., `supabase.auth.signInWithPassword(...)`).
+6.  On successful authentication, Supabase Auth sets session cookies/tokens. `AuthContext` listens for auth state changes (`onAuthStateChange`) and updates its internal state (user, session, loading).
+7.  `AuthGuard` now detects the logged-in state and allows access to protected routes.
 
-## State Management
+### Pitch Deck Analysis
 
-### Authentication Context
-Located in `src/contexts/AuthContext.tsx` (141 lines), manages:
-- User authentication state
-- Login/logout operations
-- Profile information
-- Session persistence
-- Access control
+**Goal:** Provide tools or insights related to startup pitch decks (Details limited in provided docs).
 
-### Valuation Hook
-The `useValuation` hook in `src/hooks/useValuation.ts` (273 lines) manages:
-- Fetching valuation data
-- Calculation status tracking (idle, calculating, error)
-- Selected valuation updating
-- Recalculation triggering
-- Questionnaire completion checking
+**Key Components:**
+-   `src/pages/PitchDeckAnalysis.tsx`: Main page for this feature.
+-   `src/components/pitch-deck/`: Contains components specific to this feature.
 
-```typescript
-// Key types in useValuation
-interface ValuationMethods {
-  scorecard: number;
-  checklistMethod: number;
-  ventureCap: number;
-  dcfGrowth: number;
-  dcfMultiple: number;
-  weights: Record<string, { weight: number; enabled: boolean }>;
-}
+**Functionality:** (Speculative based on name) Might involve uploading pitch decks, analyzing content (potentially using AI/external APIs), providing feedback, or comparing against templates/best practices. Requires further investigation of the component implementations.
 
-interface UseValuationReturn {
-  valuation: ValuationData | null;
-  isLoading: boolean;
-  error: Error | null;
-  calculationStatus: 'idle' | 'calculating' | 'error';
-  isQuestionnaireComplete: boolean;
-  hasFinancialsData: boolean;
-  updateSelectedValuation: (value: number) => void;
-  recalculateValuation: () => void;
-}
-```
+### Settings
 
-### Startup Scoring Hook
-The `useStartupScore` hook in `src/hooks/useStartupScore.ts` (287 lines) manages:
-- Performance metric calculation
-- Benchmark comparisons
-- Score aggregation
-- Category score calculation
+**Goal:** Allow users to manage their profile and company settings.
 
-### Data Fetching Pattern
-Uses TanStack Query for data management with consistent patterns:
+**Key Components:**
+-   `src/pages/Settings.tsx`: Main page, likely using tabs or sections for different settings categories (User Profile, Company Details, Notifications, etc.).
+-   `src/components/settings/`: Contains components specific to settings forms/displays.
+-   `src/hooks/useSettingsData.ts`: Hook potentially managing fetching and updating settings data.
+-   `src/hooks/useCompanyForm.ts`: Specific hook for managing the Company Details form.
 
-```typescript
-// Example query pattern
-const { data, isLoading, error } = useQuery({
-  queryKey: ['valuation', valuationId],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('valuations')
-      .select('*, companies(*)')
-      .eq('id', valuationId)
-      .single();
-      
-    if (error) throw error;
-    return data;
-  }
-});
+**Data Interaction:** Interacts with `profiles` and `companies` tables primarily.
 
-// Example mutation pattern
-const mutation = useMutation({
-  mutationFn: async (newValue: number) => {
-    const { error } = await supabase
-      .from('valuations')
-      .update({ selected_valuation: newValue })
-      .eq('id', valuationId);
-      
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['valuation'] });
-    toast.success('Valuation updated successfully');
-  },
-  onError: (error) => {
-    toast.error(`Error updating valuation: ${error.message}`);
-  }
-});
-```
+## 9. Database Architecture
 
-## Components Architecture
+### Supabase Tables Detailed
 
-### UI Component Structure
-Components follow a clear hierarchy:
-- **Primitive Components**: Basic UI elements from shadcn/ui (Button, Input, Card, etc.)
-- **Composite Components**: Domain-specific combinations of primitives
-- **Page Components**: Full page layouts combining multiple composites
+1.  **`profiles`**: Stores extended user information beyond Supabase Auth.
+    -   `id` (uuid, PK): Links to `auth.users.id`.
+    -   `username` (text): Display name.
+    -   `full_name` (text): User's full name.
+    -   `avatar_url` (text): URL to profile picture.
+    -   `updated_at` (timestampz): Last update timestamp.
+    -   *(Other profile-specific fields)*
 
-### ValuationContent Component
+2.  **`companies`**: Core table holding information about the user's startup.
+    -   `id` (uuid, PK): Unique identifier for the company.
+    -   `owner_id` (uuid, FK -> profiles.id): User who owns/created the company record.
+    -   `name` (text): Company name.
+    -   `industry` (text): Industry sector.
+    -   `founded_year` (integer): Year the company was founded.
+    -   `stage` (text): Current funding stage (e.g., 'Pre-seed', 'Seed', 'Growth'). Crucial for valuation weighting.
+    -   `total_employees` (integer): Number of employees.
+    -   `business_activity` (text): Description of the company's business.
+    -   `last_revenue` (numeric): Last reported annual revenue.
+    -   `website_url` (text): Company website.
+    -   `country` (text): Country of operation.
+    -   `currency` (text): Primary currency used.
+    -   `sector` (text): Specific market sector.
+    -   `company_series` (text): Current funding series (e.g., 'A', 'B').
+    -   `created_at` (timestampz): Record creation timestamp.
+    -   `updated_at` (timestampz): Last update timestamp.
 
-The `ValuationContent` component in `src/pages/valuation/ValuationContent.tsx` (631 lines) implements:
-1. Valuation summary display with company information
-2. Interactive slider for manual valuation adjustment
-3. Visual representation of all five valuation methods
-4. Current funding round information with investment calculation
-5. Method weight visualization based on company stage
+3.  **`valuations`**: Stores results and key inputs related to valuation calculations.
+    -   `id` (uuid, PK): Unique identifier for a valuation record/instance.
+    -   `company_id` (uuid, FK -> companies.id): Links to the company being valued.
+    -   `selected_valuation` (numeric): The final valuation amount selected/adjusted by the user.
+    -   `pre_money_valuation` (numeric): Calculated valuation before investment. Often same as `selected_valuation`.
+    *   `investment` (numeric): Amount of investment in the current round. Calculated based on `selected_valuation`.
+    *   `post_money_valuation` (numeric): Calculated valuation after investment (`pre_money + investment`).
+    *   `initial_estimate` (numeric): An initial estimated valuation (source TBD - potentially default or early input).
+    *   `valuation_min` (numeric): Lower bound for the valuation slider/range.
+    *   `valuation_max` (numeric): Upper bound for the valuation slider/range.
+    *   `funds_raised` (numeric): Total funds raised historically (may need updating).
+    *   `last_year_ebitda` (numeric): Earnings Before Interest, Taxes, Depreciation, and Amortization for the last year. Input for DCF Multiple method.
+    *   `industry_multiple` (numeric): Relevant industry multiple used in DCF Multiple calculation.
+    *   `annual_roi` (numeric): Annual Required Rate of Return or Growth Rate expectation. Used in DCF Growth and Venture Cap methods.
+    *   `calculation_date` (timestampz, nullable): Date when the calculation was last performed. (Made optional to fix type error).
+    *   `created_at` (timestampz): Record creation timestamp.
+    *   `updated_at` (timestampz): Last update timestamp.
+    *   **Note:** Does *not* store the individual results of the 5 methods (Scorecard, Checklist, etc.). Those are handled in application state (`useValuation`).
 
-Key implementation features:
-- Responsive visualizations for different screen sizes
-- Interactive elements for valuation adjustments
-- Real-time calculations for investment and post-money valuation
-- Detailed breakdown of each valuation method's result
+4.  **`questionnaires`**: Metadata container for a set of questionnaire responses linked to a valuation.
+    -   `id` (uuid, PK): Unique identifier for a questionnaire instance.
+    *   `valuation_id` (uuid, FK -> valuations.id): Links to the specific valuation this questionnaire is for.
+    *   `user_id` (uuid, FK -> profiles.id): User who completed the questionnaire.
+    *   `completed_at` (timestampz, nullable): Timestamp when completed.
+    *   `created_at` (timestampz): Record creation timestamp.
 
-### BenchmarksContent Component
+5.  **`questionnaire_questions`**: Stores answers to individual questions within a questionnaire.
+    -   `id` (uuid, PK): Unique identifier for a question response.
+    *   `questionnaire_id` (uuid, FK -> questionnaires.id): Links to the parent questionnaire.
+    *   `question_number` (text): Identifier for the question (e.g., "1.1", "6.3"). Used to retrieve specific answers.
+    *   `question` (text): The text of the question asked.
+    *   `response` (text, nullable): The user's answer, stored as text regardless of original type. Needs parsing in the application.
+    *   `response_type` (text): The type of input expected (e.g., 'dropdown', 'number', 'text').
+    *   `created_at` (timestampz): Record creation timestamp.
 
-The `BenchmarksContent` component in `src/pages/valuation/BenchmarksContent.tsx` (418 lines) implements:
-1. Benchmark values display for key metrics
-2. Performance score calculation and visualization
-3. Category score breakdown
-4. Detailed metrics analysis with comparison to benchmarks
+6.  **`investments`**: Tracks details of specific funding rounds or investments.
+    -   `id` (uuid, PK): Unique identifier for the investment.
+    *   `company_id` (uuid, FK -> companies.id): Company receiving investment.
+    *   `shareholder_id` (uuid, FK -> shareholders.id): Investing shareholder.
+    *   `capital_invested` (numeric): Amount of capital invested.
+    *   `number_of_shares` (integer): Number of shares issued/bought.
+    *   `investment_date` (date): Date of the investment.
+    *   `round_name` (text): Name of the funding round (e.g., 'Seed', 'Series A').
+    *   `created_at` (timestampz): Record creation timestamp.
 
-### FinancialOverview Component (`src/pages/FinancialOverview.tsx`)
-This page now serves as the central hub for financial data and performance tracking.
--   Uses `Tabs` to organize content into:
-    -   Overview (cards, charts)
-    -   Update Metrics (`DefaultMetricsTab`)
-    -   Performance History (`PerformanceTab`)
-    -   Metric Definitions (`CustomMetricsTab`)
--   Fetches core data needed for the overview tab using `useQuery`.
--   Individual tabs may manage their own specific state and data fetching/mutations.
+7.  **`shareholders`**: Stores information about individuals or entities holding shares.
+    -   `id` (uuid, PK): Unique identifier for the shareholder.
+    *   `company_id` (uuid, FK -> companies.id): Company they hold shares in.
+    *   `name` (text): Name of the shareholder.
+    *   `contact` (text): Contact information.
+    *   `invested_amount` (numeric): Total amount invested by this shareholder.
+    *   `share_count` (integer): Total number of shares held.
+    *   `share_class` (text): Class of shares held (e.g., 'Common', 'Preferred').
+    *   `created_at` (timestampz): Record creation timestamp.
 
-## Data Room System (Storage API Based)
+8.  **`performance_metrics`**: Defines the metrics available for tracking.
+    -   `id` (uuid, PK): Unique identifier for the metric definition.
+    *   `name` (text): Name of the metric (e.g., "Revenue", "Gross Margin", "CAC").
+    *   `unit` (text): Unit of measurement (e.g., "USD", "%", "Count").
+    *   `description` (text, nullable): Explanation of the metric.
+    *   `is_default` (boolean): Indicates if it's a standard metric offered by the platform.
+    *   `user_id` (uuid, nullable, FK -> profiles.id): Links to the user if it's a custom metric.
 
-The Data Room module (`src/pages/Data.tsx`) provides secure document management directly interacting with the **`data_room` Supabase Storage bucket**. It allows users to browse, upload, download, and delete files and folders.
+9.  **`performance_values`**: Stores the actual recorded values for metrics over time.
+    -   `id` (uuid, PK): Unique identifier for the value record.
+    *   `metric_id` (uuid, FK -> performance_metrics.id): Links to the metric being recorded.
+    *   `company_id` (uuid, FK -> companies.id): Company the metric belongs to.
+    *   `month` (integer): Month the value was recorded for (1-12).
+    *   `year` (integer): Year the value was recorded for.
+    *   `actual` (numeric, nullable): The actual measured value.
+    *   `target` (numeric, nullable): The target/goal value for that period.
+    *   `created_at` (timestampz): Record creation timestamp.
+    *   `updated_at` (timestampz): Last update timestamp.
 
-**Note:** This implementation *does not* rely on the `files` or `folders` database tables for its core functionality. It reads the structure directly from the storage bucket.
+10. **`user_benchmarks`**: Stores user-defined overrides for industry benchmarks used in scoring.
+    -   `id` (uuid, PK): Unique identifier.
+    *   `user_id` (uuid, FK -> profiles.id): User who set the custom benchmark.
+    *   `metric_name` (text): Name of the metric being benchmarked (e.g., 'avg_revenue', 'avg_growth_rate'). Should match keys used in `calculateScore.ts`.
+    *   `value` (numeric): The custom benchmark value set by the user.
+    *   `industry` (text, nullable): Optionally specifies the industry this benchmark applies to.
+    *   `created_at` (timestampz): Record creation timestamp.
 
-### Key Components
+11. **`folders`** (Potentially unused by Data Room UI): Database table for folder metadata.
+    -   `id` (uuid, PK): Unique identifier.
+    *   `name` (text): Folder name.
+    *   `parent_id` (uuid, nullable, FK -> folders.id): Links to parent folder for hierarchy.
+    *   `owner_id` (uuid, FK -> profiles.id): User who created the folder.
+    *   `created_at` (timestampz): Record creation timestamp.
+    *   **Note:** The Data Room UI primarily interacts with Storage API prefixes, not this table. This might be for other features or future use.
 
-1. **Data Page Component** (`src/pages/Data.tsx`, ~400+ lines):
-   - Implements the main UI for file/folder browsing.
-   - Uses `supabase.storage.from('data_room').list(currentPath)` via `useQuery` to fetch items.
-   - Manages navigation state using `currentPath` (string representing the storage prefix) and `folderPath` (array for breadcrumbs).
-   - Displays items in a table, distinguishing between files and folders (prefixes).
-   - Handles item selection using storage paths.
-   - Provides client-side search filtering.
+12. **`files`** (Potentially unused by Data Room UI): Database table for file metadata.
+    -   `id` (uuid, PK): Unique identifier.
+    *   `name` (text): File name.
+    *   `description` (text, nullable): User-added description.
+    *   `folder_id` (uuid, FK -> folders.id): Links to the database folder record.
+    *   `storage_path` (text): The full path to the file in Supabase Storage (`data_room` bucket).
+    *   `file_size` (integer): File size in bytes.
+    *   `file_type` (text): MIME type of the file (e.g., 'application/pdf').
+    *   `owner_id` (uuid, FK -> profiles.id): User who uploaded the file.
+    *   `created_at` (timestampz): Record creation timestamp.
+    *   **Note:** The Data Room UI primarily interacts with Storage API paths, not this table. This might be for searching, permissions, or other features.
 
-2. **AddDocumentDialog** (`src/components/dialogs/AddDocumentDialog.tsx`):
-   - Accepts `currentPath` prop.
-   - Uploads the selected file directly to Supabase Storage within the `currentPath` using `supabase.storage.from('data_room').upload(filePath, file)`.
-   - Constructs `filePath` by combining `currentPath` and a unique filename.
-   - Invalidates the storage query (`['storage', 'data_room', currentPath]`) on success.
-   - *Optional*: Can be configured to also write metadata to the `files` database table if needed for other purposes.
+### Table Relationships
+-   `profiles` <-> `companies` (One-to-Many: One user owns many companies, though likely restricted to one active company per user in practice)
+-   `companies` <-> `valuations` (One-to-Many: One company has many valuation records/snapshots)
+-   `valuations` <-> `questionnaires` (One-to-Many: One valuation can have multiple questionnaire attempts, though likely one primary)
+-   `questionnaires` <-> `questionnaire_questions` (One-to-Many: One questionnaire contains many question responses)
+-   `companies` <-> `shareholders` (One-to-Many)
+-   `companies` <-> `investments` (One-to-Many)
+-   `shareholders` <-> `investments` (One-to-Many)
+-   `companies` <-> `performance_values` (One-to-Many)
+-   `performance_metrics` <-> `performance_values` (One-to-Many)
+-   `profiles` <-> `performance_metrics` (One-to-Many for custom metrics)
+-   `profiles` <-> `user_benchmarks` (One-to-Many)
+-   `profiles` <-> `folders` (One-to-Many)
+-   `profiles` <-> `files` (One-to-Many)
+-   `folders` <-> `files` (One-to-Many)
+-   `folders` <-> `folders` (Self-referencing for parent/child hierarchy)
 
-3. **CreateFolderDialog** (`src/components/dialogs/CreateFolderDialog.tsx`):
-   - Accepts `currentPath` prop.
-   - Creates a "folder" in storage by uploading an empty placeholder file (e.g., `.placeholder`) to the desired prefix: `supabase.storage.from('data_room').upload(placeholderPath, ...)`. This makes the prefix appear in `list()` results.
-   - Constructs the `placeholderPath` using `currentPath` and the sanitized folder name.
-   - Invalidates the storage query (`['storage', 'data_room', currentPath]`) on success.
-   - *Optional*: Can be configured to also write metadata to the `folders` database table.
+### Row-Level Security (RLS)
+-   RLS policies are crucial for ensuring data privacy and security in a multi-tenant application (even if currently single-company focused).
+-   Policies are typically defined directly in Supabase SQL editor or via migrations.
+-   **Common Patterns:**
+    *   Users can only SELECT/INSERT/UPDATE/DELETE data related to their `auth.uid()`.
+    *   Access might be based on linking tables (e.g., a `company_users` table mapping users to companies they can access).
+    *   Example provided in original docs is good: Check if `auth.uid()` is in a related table (`company_users`) linked to the target row (`companies`).
 
-### Implementation Details
+### Supabase Storage
+-   A dedicated bucket named `data_room` is used for the Data Room feature.
+-   Files are organized using prefixes (paths) within the bucket (e.g., `folderA/subFolderB/document.pdf`).
+-   Access control is typically managed via Storage RLS policies defined in Supabase, often mirroring database RLS logic (e.g., allowing users to access files/folders linked to their user ID or company ID).
 
-#### Supabase Storage Interaction
+## 10. State Management
 
-- **Listing**: `supabase.storage.from('data_room').list(path)` is the primary method for fetching content.
-- **Uploading**: `supabase.storage.from('data_room').upload(path, file)` for files and placeholder files.
-- **Downloading**: `supabase.storage.from('data_room').download(path)`.
-- **Deleting**: `supabase.storage.from('data_room').remove([paths])` handles both files and folder prefixes (deleting all objects under that prefix).
+State management is handled through a combination of TanStack Query for server state and React Context/useState for client state.
 
-#### State Management
+### TanStack Query (React Query)
+-   **Primary Use:** Managing server state fetched from Supabase (database tables and storage).
+-   **Key Concepts Used:**
+    *   `useQuery`: For fetching data. Requires a unique `queryKey` (often an array like `['valuation']` or `['storage', 'data_room', currentPath]`) and a `queryFn` (async function to fetch data). Handles caching, background refetching, loading/error states.
+    *   `useMutation`: For creating, updating, or deleting data. Requires a `mutationFn` (async function performing the change). Provides `onSuccess` and `onError` callbacks for side effects like cache invalidation and showing notifications.
+    *   `QueryClient`: Manages the query cache. Used for invalidating queries (`queryClient.invalidateQueries`) after mutations to trigger refetches, or for directly setting query data (`queryClient.setQueryData`).
+-   **Caching:** TanStack Query automatically caches fetched data based on the `queryKey`. Stale data might be shown initially while fresh data is fetched in the background. `staleTime` and `gcTime` (cacheTime) configure cache behavior.
+-   **Data Synchronization:** Helps keep UI consistent with backend data through automatic refetching on events like window refocus, component mount, or after mutations.
 
-- `currentPath`: String state (`useState('')`) tracking the current folder prefix being viewed in the storage bucket (e.g., `''`, `'folderA'`, `'folderA/subFolderB'`).
-- `folderPath`: Array state (`useState([{ name: 'Root' }])`) storing path segments for breadcrumb navigation.
-- `selectedItems`: Array state (`useState([])`) storing the full storage paths of selected items for deletion.
-- TanStack Query (`useQuery`, `useMutation`) manages fetching state, caching, and server interactions with the Storage API.
+### React Context API
+-   **`AuthContext` (`src/contexts/AuthContext.tsx`):**
+    *   Provides global access to the current user's authentication status (logged in/out), user profile data, and session information.
+    *   Exposes functions for `signInWithPassword`, `signUp`, `signOut`.
+    *   Listens to Supabase `onAuthStateChange` to automatically update state when the user logs in or out elsewhere or the session expires.
+-   **Other Contexts (Potential):** Could be used for theme switching, application-wide settings, or other rarely changing global state. Avoid overuse for state that changes frequently or is only needed by a few components.
 
-#### Key Functions in `Data.tsx`
+### Local Component State (useState)
+-   Used for managing state that is local to a single component or a small group of closely related components.
+-   Examples: Form input values before submission, UI state like modal visibility (`isOpen`), toggle states, current path in Data Room (`currentPath`, `folderPath`), slider value (`rangeValue`), drag state (`isDragging`).
 
-- `navigateToFolder(folderName)`: Appends `folderName` to `currentPath`, updates `folderPath`, clears selection/search.
-- `navigateBreadcrumb(index)`: Resets `currentPath` and `folderPath` based on the clicked breadcrumb index.
-- `downloadFile(filePath, fileName)`: Calls `supabase.storage.from('data_room').download(filePath)`.
-- `deleteItemsMutation`: Calls `supabase.storage.from('data_room').remove(selectedItems)`.
-- `formatBytes`: Utility to format file sizes.
+## 11. Components Architecture
 
-## Valuation System Technical Details
+### Component Types
+1.  **UI Primitives (`src/components/ui/`)**: Basic, unstyled or minimally styled building blocks imported from `shadcn/ui` (e.g., `Button`, `Input`, `Card`, `Dialog`, `Tooltip`). These are the foundation.
+2.  **Composite Components (`src/components/` subfolders)**: Combine UI primitives and potentially other composite components to create more complex, feature-specific UI elements (e.g., `FinancialMetricCard`, `BenchmarkComparisonCard`, `AddDocumentDialog`). These encapsulate specific functionality or views.
+3.  **Page Components (`src/pages/`)**: Represent entire application screens or routes. They orchestrate the layout and interaction of multiple composite components, often fetching data using hooks and passing it down.
 
-### Calculation Algorithms
+### Key Components Deep Dive
+-   **`Layout.tsx`**: Defines the overall structure of the authenticated application view. Typically includes:
+    *   `SidebarNav.tsx`: Renders the main navigation menu.
+    *   `TopBar.tsx`: Displays the header, potentially with user menu, notifications, search.
+    *   Main content area: Renders the active page component passed via `react-router-dom`'s `<Outlet />`.
+-   **`ValuationContent.tsx`**: As detailed in [Core Features](#core-features--implementation), responsible for the interactive valuation analysis display. Uses `useValuation` hook extensively. Renders charts using `Recharts`.
+-   **`BenchmarksContent.tsx`**: Displays the startup score and benchmark comparisons. Uses `useStartupScore` hook. Renders charts/tables.
+-   **`Data.tsx`**: Implements the file browser interface for the Data Room. Manages path state, interacts directly with Supabase Storage via `useQuery` (`list`) and `useMutation` (`upload`, `remove`, `download`).
+-   **`FinancialOverview.tsx`**: Acts as a container using `Tabs` to host various performance-related components (`DefaultMetricsTab`, `PerformanceTab`, etc.). Fetches overview data.
 
-The valuation calculation in `valuationCalculator.ts` implements these key methods:
+## 12. Routing
 
-1. **Scorecard Method**:
-   ```typescript
-   function calculateScorecardMethod(questions: QuestionWithResponse[]): number {
-     // Base valuation for comparison (seed stage software startup average)
-     const baseValuation = 5000000;
-     
-     // Factors to evaluate with weights
-     const factors = {
-       team: 0.3,           // Team quality and experience
-       market: 0.25,        // Market size and growth
-       product: 0.15,       // Product/technology uniqueness
-       competition: 0.1,    // Competitive landscape
-       businessModel: 0.1,  // Business model viability
-       financials: 0.1      // Financial projections
-     };
-     
-     // Calculate weighted average rating across all factors
-     const weightedRating = calculateWeightedRating(questions, factors);
-     
-     // Apply the rating to the base valuation
-     return baseValuation * weightedRating;
-   }
-   ```
+-   Client-side routing is handled by `react-router-dom`.
+-   Routes are defined within `src/App.tsx`, typically using `<BrowserRouter>`, `<Routes>`, and `<Route>` components.
+-   Nested routes might be used for sections like Valuation or Settings.
+-   Protected routes requiring authentication are wrapped with the `AuthGuard` component.
+    ```tsx
+    // Example in App.tsx
+    <Route element={<AuthGuard />}>
+      <Route element={<Layout />}> // Apply main layout to protected routes
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/financial-overview" element={<FinancialOverview />} />
+        <Route path="/valuation" element={<Valuation />} />
+        {/* ... other protected routes */}
+      </Route>
+    </Route>
+    <Route path="/auth" element={<Auth />} />
+    ```
 
-2. **Checklist Method**:
-   ```typescript
-   function calculateChecklistMethod(questions: QuestionWithResponse[]): number {
-     // Base valuation (pre-money)
-     const baseValuation = 7500000;
-     
-     // Apply adjustments for each factor
-     const totalAdjustment = calculateFactorAdjustments(questions);
-     
-     // Apply adjustment to base valuation
-     return baseValuation * (1 + totalAdjustment);
-   }
-   ```
-
-3. **Venture Capital Method**:
-   ```typescript
-   function calculateVentureCapMethod(questions: QuestionWithResponse[]): number {
-     // Extract financial data from questionnaire
-     const { lastYearRevenue, projectedRevenue, growthRate } = extractFinancialData(questions);
-     
-     // Calculate revenue multiple based on growth rate
-     const revenueMultiple = calculateRevenueMultiple(growthRate);
-     
-     // Use projected revenue if available, otherwise use current revenue with growth
-     const revenueToUse = projectedRevenue > 0 ? 
-       projectedRevenue : 
-       (lastYearRevenue * (1 + (growthRate / 100)));
-     
-     return revenueToUse * revenueMultiple;
-   }
-   ```
-
-4. **DCF with Long-Term Growth**:
-   ```typescript
-   function calculateDCFGrowthMethod(questions: QuestionWithResponse[]): number {
-     // Extract financial data
-     const { lastYearRevenue, growthRate, profitMargin } = extractFinancialData(questions);
-     
-     // Calculate DCF over projection period (5 years)
-     let valuation = calculateDiscountedCashFlows(
-       lastYearRevenue, 
-       growthRate, 
-       profitMargin,
-       5,  // projection years
-       0.25 // discount rate
-     );
-     
-     // Add terminal value with perpetual growth
-     valuation += calculateTerminalValue(
-       lastYearRevenue,
-       growthRate,
-       profitMargin,
-       0.03, // terminal growth rate
-       10,   // terminal multiple
-       0.25, // discount rate
-       5     // projection years
-     );
-     
-     return Math.max(valuation, 0);
-   }
-   ```
-
-5. **DCF with Multiples**:
-   ```typescript
-   function calculateDCFMultipleMethod(questions: QuestionWithResponse[]): number {
-     // Extract financial data
-     const { lastYearRevenue, profitMargin, industry } = extractFinancialData(questions);
-     
-     // Calculate EBITDA
-     const ebitda = lastYearRevenue * (profitMargin / 100);
-     
-     // Determine industry multiple
-     const industryMultiple = getIndustryMultiple(industry);
-     
-     // Apply multiple to EBITDA or revenue
-     if (ebitda > lastYearRevenue * 0.05) {
-       return ebitda * industryMultiple;
-     } else {
-       return lastYearRevenue * (industryMultiple * 0.8);
-     }
-   }
-   ```
-
-### Normalization Process
-
-To handle extreme differences between valuation methods:
-
-```typescript
-function normalizeValuationMethodValues(values: Record<string, number>): Record<string, number> {
-  // Find median value for reference
-  const sortedValues = [...positiveValues].sort((a, b) => a - b);
-  const median = sortedValues[Math.floor(sortedValues.length / 2)];
-  
-  // If extreme differences exist (max/min > 100), normalize
-  if (maxValue / minValue > 100) {
-    // Bring extreme values closer to median
-    for (const key of Object.keys(result)) {
-      const value = result[key];
-      
-      if (value < median * 0.01) {
-        result[key] = median * 0.01;
-      } else if (value > median * 100) {
-        result[key] = median * 100;
-      }
-    }
-  }
-  
-  return result;
-}
-```
-
-## Authentication
-
-Authentication implementation uses Supabase Auth with:
-- Email/password authentication
-- Session persistence via cookies
-- Protected routes via AuthGuard component
-- User profile management
-- Role-based access control
-
-## Integration Points
+## 13. Integration Points
 
 ### Supabase Integration
+-   **Client Initialization (`src/integrations/supabase/client.ts`):** Creates the Supabase client instance using URL and Anon Key from environment variables. This client is imported and used throughout the application for database, auth, and storage interactions.
+-   **Type Safety (`src/integrations/supabase/types.ts`):** Auto-generated types provide compile-time checks and autocomplete for database operations when using the Supabase client, reducing runtime errors. Generated using `supabase gen types typescript`.
+-   **Environment Variables:** Securely handled via `.env` locally and Vercel environment variable settings in deployment.
 
-```typescript
-// src/integrations/supabase/client.ts
-import { createClient } from '@supabase/supabase-js';
+## 14. Development Practices
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+### Coding Style & Linting
+-   **TypeScript:** Used throughout for static typing.
+-   **ESLint & Prettier:** (Assumed) Standard tools for enforcing code style consistency and catching common errors. Configuration likely in `.eslintrc.js` / `.prettierrc.js`.
+-   **Component Naming:** PascalCase (e.g., `ValuationContent`).
+-   **Hook Naming:** camelCase, prefixed with `use` (e.g., `useValuation`).
+-   **File Naming:** Consistent with component/hook name (e.g., `ValuationContent.tsx`, `useValuation.ts`).
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-```
+### Error Handling
+-   **Data Fetching:** TanStack Query handles loading and error states automatically. Errors can be accessed from `useQuery` / `useMutation` results (`error` property).
+-   **Mutations:** `onError` callbacks in `useMutation` are used to display user-friendly error messages via toasts.
+-   **General Errors:** `try...catch` blocks are used for critical operations or where specific error handling is needed. Errors are logged to the console and user-facing messages are shown via toasts. Component error boundaries could be implemented for more robust UI error handling.
 
-Extended client functionality is provided in `client-extension.ts` for typesafe queries.
+### Form Validation
+-   **React Hook Form:** Manages form state, submission, and validation status.
+-   **Zod:** Defines validation schemas (`src/schemas/`).
+-   **`@hookform/resolvers/zod`:** Connects Zod schemas to React Hook Form for seamless validation. Errors are displayed near the relevant form fields.
 
-The database schema types are defined in `types.ts` (1117 lines) for complete type safety when working with the database.
+### API/Data Layer Interaction
+-   All direct interactions with Supabase (DB, Auth, Storage) should ideally be encapsulated within hooks (`useQuery`, `useMutation`) or specific library functions (`src/lib/`).
+-   Avoid direct Supabase calls within UI components where possible; prefer using custom hooks that provide the data or mutation functions.
+-   Use the auto-generated Supabase types (`Database` type from `types.ts`) for type-safe database queries.
 
-## Development Practices
+## 15. Deployment
 
-### Error Handling Pattern
-```typescript
-try {
-  // Operation that might fail
-  const result = await someAsyncOperation();
-  return result;
-} catch (error) {
-  if (error instanceof Error) {
-    console.error(`Specific error: ${error.message}`);
-    toast.error(`Operation failed: ${error.message}`);
-  } else {
-    console.error('An unknown error occurred', error);
-    toast.error('An unknown error occurred');
-  }
-  throw error; // Re-throw for component error boundaries
-}
-```
+-   **Platform:** Vercel.
+-   **Process:**
+    1.  Connect the GitHub repository to a Vercel project.
+    2.  Configure the Framework Preset to `Vite`.
+    3.  Set the Root Directory (usually `./`).
+    4.  Configure Build Command (Vercel usually detects `npm run build` or `yarn build`).
+    5.  Configure Output Directory (Vercel usually detects `dist`).
+    6.  **Crucially:** Add all required [Environment Variables](#environment-variables) (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) to the Vercel project settings.
+    7.  Ensure the `vercel.json` file with the SPA rewrite rule exists in the root of the repository (see below).
+    8.  Deployments are typically triggered automatically on pushes to the main branch (or configured branches).
+-   **SPA Handling (`vercel.json`):**
+    ```json
+    {
+      "rewrites": [
+        {
+          "source": "/((?!api|.*\.\w+).*)",
+          "destination": "/index.html"
+        }
+      ]
+    }
+    ```
+    This file is necessary in the project root to ensure direct navigation to sub-routes (e.g., `/financial-overview`) works correctly by serving the `index.html` file for all non-asset/non-API requests.
 
-### Form Validation with Zod and React Hook Form
-```typescript
-// Schema definition
-const companySchema = z.object({
-  name: z.string().min(2, 'Company name must be at least 2 characters'),
-  industry: z.string().min(1, 'Please select an industry'),
-  stage: z.string().min(1, 'Please select a company stage'),
-  foundedYear: z.string().regex(/^\d{4}$/, 'Please enter a valid year')
-});
+## 16. Potential Future Enhancements
 
-// Form implementation
-const { register, handleSubmit, formState: { errors } } = useForm({
-  resolver: zodResolver(companySchema),
-  defaultValues: { ... }
-});
-```
+-   More sophisticated AI/ML features for pitch deck analysis or financial forecasting.
+-   Advanced cap table modeling (convertible notes, SAFEs, waterfall analysis).
+-   Integration with accounting software (QuickBooks, Xero).
+-   Investor relationship management (CRM) features.
+-   Customizable reporting and dashboards.
+-   Team collaboration features (multi-user access control per company).
+-   Real-time notifications for metric updates or tasks.
+-   Mobile application.
 
-### Component Props Pattern
-```typescript
-interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
-  iconLeft?: React.ReactNode;
-  iconRight?: React.ReactNode;
-  isLoading?: boolean;
-  disabled?: boolean;
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-```
+## 17. Glossary
 
-### Data Formatting Utilities
-The application includes consistent formatters for data display:
-
-```typescript
-// src/lib/formatters.ts
-export function formatCurrency(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value);
-}
-```
-
-This ensures consistent data presentation throughout the application.
-
-## Performance Tracking (Integrated into Financial Overview)
-
-The functionality previously under a dedicated "Performance" page is now integrated as tabs within the **Financial Overview** page (`src/pages/FinancialOverview.tsx`). This provides a centralized location for viewing, updating, and analyzing key performance indicators (KPIs).
-
-### Integrated Tabs within Financial Overview:
-
-1.  **Overview**: Displays key financial metric cards and charts (original content of Financial Overview).
-2.  **Update Metrics**: Allows users to input actual and target values for default metrics for specific months/years. Implemented by `src/components/performance/DefaultMetricsTab.tsx`.
-3.  **Performance History**: Shows historical charts and potentially a table of past metric updates. Implemented by `src/components/performance/PerformanceTab.tsx`.
-4.  **Metric Definitions**: Lists predefined metrics and potentially allows adding custom ones. Implemented by `src/components/performance/CustomMetricsTab.tsx`.
-
-### Implementation Details:
-
--   **UI**: Uses the `Tabs` component from `shadcn/ui` within `FinancialOverview.tsx`.
--   **Data Fetching**: Leverages `useQuery` within `FinancialOverview.tsx` and potentially within the individual tab components (`DefaultMetricsTab` likely uses `useQuery` and `useMutation`) to fetch/update data from `performance_values` and `performance_metrics` tables.
+-   **Benchmarking:** Comparing a startup's performance metrics against industry standards or peers.
+-   **Cap Table (Capitalization Table):** A spreadsheet or table detailing the equity ownership of a company, including shares, options, and convertible notes.
+-   **Checklist Method:** A valuation approach based on comparing a startup against a predefined list of success factors.
+-   **DCF (Discounted Cash Flow):** A valuation method used to estimate the value of an investment based on its expected future cash flows discounted back to their present value.
+-   **EBITDA:** Earnings Before Interest, Taxes, Depreciation, and Amortization. A measure of a company's operating profitability.
+-   **ESOP (Employee Stock Ownership Plan):** A benefit plan that gives workers ownership interest in the company.
+-   **Post-Money Valuation:** The value of a company *after* an external investment has been added to its balance sheet.
+-   **Pre-Money Valuation:** The value of a company *before* it receives external investment.
+-   **RLS (Row-Level Security):** Database security feature restricting access to rows based on user roles or attributes.
+-   **Scorecard Method:** A valuation approach comparing a startup to typical valuations of similar companies, adjusting based on factors like team, market, and product.
+-   **SPA (Single Page Application):** A web application that interacts with the user by dynamically rewriting the current web page with new data from the web server, instead of the default method of the browser loading entire new pages.
+-   **Supabase:** An open-source Backend-as-a-Service platform.
+-   **TanStack Query (React Query):** A library for managing server state in React applications.
+-   **Venture Capital Method:** A valuation method estimating terminal value at exit and discounting back based on required ROI.
+-   **Vite:** A modern frontend build tool.
+-   **Zod:** A TypeScript-first schema declaration and validation library.
 
 
