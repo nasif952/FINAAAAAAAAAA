@@ -301,7 +301,7 @@ export function ValuationContent() {
                             size="sm"
                             className="gap-1.5"
                             onClick={recalculateValuation}
-                            disabled={calculationStatus === 'calculating'}
+                            disabled={calculationStatus === 'calculating' || !data?.companies?.id}
                           >
                            {calculationStatus === 'calculating' ? 
                               <RefreshCw className="h-4 w-4 animate-spin" /> : 

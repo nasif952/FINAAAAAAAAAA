@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/Card';
-import { useStartupScore } from '@/hooks/useStartupScore';
+import { useStartupScore, CompanyData, ValuationData, PerformanceData } from '@/hooks/useStartupScore';
 import { useToast } from '@/hooks/use-toast';
 import { ScoreData } from '@/lib/calculateScore';
 import { Button } from '@/components/Button';
@@ -16,18 +16,30 @@ import { Link } from 'react-router-dom';
 
 export function BenchmarksContent() {
   const { toast } = useToast();
-  const { score: latestScore, calculateScore, loading, refetchScore, companyData } = useStartupScore();
+  const { 
+    score: latestScore, 
+    calculateScore, 
+    loading, 
+    refetchScore, 
+    companyData, 
+    valuationData, 
+    performanceData
+  } = useStartupScore();
   const [scoreDetails, setScoreDetails] = useState<ScoreData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [initialCalculationDone, setInitialCalculationDone] = useState(false);
   const [displayData, setDisplayData] = useState<any>(null);
+
+  // Determine if all necessary data for calculation is loaded
+  const isDataReadyForCalculation = !!companyData && !!valuationData && !!performanceData;
 
   console.log("BenchmarksContent rendering with:", { 
     latestScore, 
     scoreDetails, 
     loading, 
     refreshing,
-    initialCalculationDone
+    initialCalculationDone,
+    isDataReadyForCalculation
   });
 
   // Get mock data to show while real data is loading
@@ -240,46 +252,38 @@ export function BenchmarksContent() {
   // Calculate score automatically on component mount, but only once
   useEffect(() => {
     const autoCalculateScore = async () => {
-      // Only calculate if we don't have a score, aren't already loading, and haven't calculated yet
-      if ((!latestScore || latestScore.total_score === 0) && !initialCalculationDone && !refreshing && !loading) {
+      // IMPROVED CHECK: Only calculate if data is ready, not loading/refreshing, and not done yet
+      if (isDataReadyForCalculation && (!latestScore || latestScore.total_score === 0) && !initialCalculationDone && !refreshing && !loading) {
         console.log("Running auto-calculation once - setting initialCalculationDone flag");
-        setRefreshing(true);
+        setRefreshing(true); // Use refreshing state to indicate calculation in progress
+        setInitialCalculationDone(true); // Mark as attempted
         try {
           const newScore = await calculateScore();
           if (newScore) {
             setScoreDetails(newScore);
-            toast({
-              title: "Score calculated",
-              description: "Your startup score has been calculated.",
-            });
+            // Optional: refetch data after calculation if needed
+            // await refetchScore(); 
+            toast({ title: "Score calculated", description: "Initial startup score has been calculated." });
           }
         } catch (error) {
-          console.error("Error calculating initial score:", error);
+          console.error("Error during auto score calculation:", error);
           toast({
-            title: "Error calculating score",
-            description: "There was a problem calculating your startup score.",
+            title: "Auto-calculation Error",
+            description: error instanceof Error ? error.message : "Could not automatically calculate score.",
             variant: "destructive"
           });
+          setInitialCalculationDone(false); // Allow retry if it failed? Or handle differently.
         } finally {
           setRefreshing(false);
-          setInitialCalculationDone(true);
         }
-      } else if (latestScore && !scoreDetails && !initialCalculationDone) {
-        // If we have a latest score but no details, simply recalculate once
-        console.log("Have latestScore but no scoreDetails, triggering recalculation once");
-        handleRefreshScore();
-        setInitialCalculationDone(true);
       } else {
-        // If we've already calculated or attempted calculation, just set the flag
-        setInitialCalculationDone(true);
+         console.log("Skipping auto-calculation:", { isDataReadyForCalculation, hasLatestScore: !!latestScore, initialCalculationDone, refreshing, loading });
       }
     };
 
-    // Run once on mount
-    if (!initialCalculationDone) {
-      autoCalculateScore();
-    }
-  }, []);  // Empty dependency array ensures this only runs once on mount
+    autoCalculateScore();
+  // Add all data dependencies to the effect dependencies array
+  }, [isDataReadyForCalculation, latestScore, initialCalculationDone, refreshing, loading, calculateScore, toast]); 
   
   // Handler for benchmark changes
   const handleBenchmarksChange = async () => {
@@ -400,6 +404,9 @@ export function BenchmarksContent() {
     }
   };
   
+  // Determine overall loading state for the UI
+  const isLoadingUI = loading || refreshing; // Combine hook loading and local refreshing state
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
@@ -419,165 +426,214 @@ export function BenchmarksContent() {
       
       <EditableBenchmarks onBenchmarksChange={handleBenchmarksChange} />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-xl font-bold">Performance Score</h2>
-            <Button 
-              variant="outline" 
-              onClick={handleRefreshScore} 
-              isLoading={refreshing || loading}
-              iconLeft={<RefreshCw size={16} />} 
-              size="sm"
-            >
-              Recalculate Score
-            </Button>
-          </div>
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className={`text-5xl font-bold ${getScoreColor(dataToRender.total_score)}`}>
-                    {dataToRender.total_score}
-                  </p>
-                  <span className="text-sm text-muted-foreground">/ 100</span>
-                </div>
-                <p className="text-lg font-medium mt-1">{getScoreTier(dataToRender.total_score)}</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Last updated: {dataToRender.calculation_date 
-                    ? new Date(dataToRender.calculation_date).toLocaleDateString() 
-                    : 'Never'}
-                </p>
-              </div>
-              
-              <div className="flex items-center mt-4 md:mt-0">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Company</p>
-                    <p className="font-medium">{companyData?.name || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Industry</p>
-                    <p className="font-medium">{companyData?.industry || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Founded</p>
-                    <p className="font-medium">{companyData?.founded_year || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Employees</p>
-                    <p className="font-medium">{companyData?.total_employees || 'Unknown'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Finance Score</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span><Info size={14} className="text-muted-foreground" /></span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Based on revenue, gross margin, cash on hand, and valuation.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span className="font-medium">{dataToRender.finance_score}/100</span>
-                </div>
-                <Progress value={dataToRender.finance_score} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Team Score</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span><Info size={14} className="text-muted-foreground" /></span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Based on team size and composition.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span className="font-medium">{dataToRender.team_score}/100</span>
-                </div>
-                <Progress value={dataToRender.team_score} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Growth Score</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span><Info size={14} className="text-muted-foreground" /></span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Based on growth rate and annual ROI.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span className="font-medium">{dataToRender.growth_score}/100</span>
-                </div>
-                <Progress value={dataToRender.growth_score} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Market Score</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span><Info size={14} className="text-muted-foreground" /></span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Based on market size and competition.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span className="font-medium">{dataToRender.market_score}/100</span>
-                </div>
-                <Progress value={dataToRender.market_score} className="h-2" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Product Score</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span><Info size={14} className="text-muted-foreground" /></span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Based on product readiness and innovation.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span className="font-medium">{dataToRender.product_score}/100</span>
-                </div>
-                <Progress value={dataToRender.product_score} className="h-2" />
-              </div>
-            </div>
-          </div>
-        </Card>
-        
-        <BenchmarkComparisonCard />
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Startup Score & Benchmarks</h2>
+        <div className="flex gap-2">
+           {/* Refresh from DB Button */}
+           <TooltipProvider>
+             <Tooltip delayDuration={100}>
+               <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefreshScore} 
+                    // Disable if loading/refreshing OR if data needed for refetch isn't ready
+                    disabled={isLoadingUI || !companyData} 
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoadingUI ? 'animate-spin' : ''}`} />
+                    Refresh Score
+                  </Button>
+               </TooltipTrigger>
+               <TooltipContent>Refresh score using latest data from database.</TooltipContent>
+             </Tooltip>
+           </TooltipProvider>
+           
+           {/* Force Recalculate Button */}
+            <TooltipProvider>
+             <Tooltip delayDuration={100}>
+               <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleForceRefresh} 
+                    // Disable if loading/refreshing OR if data needed for calculation isn't ready
+                    disabled={isLoadingUI || !isDataReadyForCalculation} 
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoadingUI ? 'animate-spin' : ''}`} />
+                    Recalculate All
+                  </Button>
+               </TooltipTrigger>
+               <TooltipContent>Recalculate score using latest questionnaire data.</TooltipContent>
+             </Tooltip>
+           </TooltipProvider>
+           
+          {/* Button to initialize test questionnaire (optional) */}
+          {/* <Button variant="secondary" size="sm" onClick={initializeTestQuestionnaire}>Init Test Questionnaire</Button> */}
+        </div>
       </div>
+      
+      {/* Loading Indicator */}
+      {isLoadingUI && (
+        <div className="flex items-center justify-center p-8 text-muted-foreground">
+          <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+          <span>Loading score data...</span>
+        </div>
+      )}
+      
+      {!isLoadingUI && displayData && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-xl font-bold">Performance Score</h2>
+            </div>
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className={`text-5xl font-bold ${getScoreColor(dataToRender.total_score)}`}>
+                      {dataToRender.total_score}
+                    </p>
+                    <span className="text-sm text-muted-foreground">/ 100</span>
+                  </div>
+                  <p className="text-lg font-medium mt-1">{getScoreTier(dataToRender.total_score)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Last updated: {dataToRender.calculation_date 
+                      ? new Date(dataToRender.calculation_date).toLocaleDateString() 
+                      : 'Never'}
+                  </p>
+                </div>
+                
+                <div className="flex items-center mt-4 md:mt-0">
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Company</p>
+                      <p className="font-medium">{companyData?.name || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Industry</p>
+                      <p className="font-medium">{companyData?.industry || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Founded</p>
+                      <p className="font-medium">{companyData?.founded_year || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Employees</p>
+                      <p className="font-medium">{companyData?.total_employees || 'Unknown'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Finance Score</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span><Info size={14} className="text-muted-foreground" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Based on revenue, gross margin, cash on hand, and valuation.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="font-medium">{dataToRender.finance_score}/100</span>
+                  </div>
+                  <Progress value={dataToRender.finance_score} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Team Score</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span><Info size={14} className="text-muted-foreground" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Based on team size and composition.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="font-medium">{dataToRender.team_score}/100</span>
+                  </div>
+                  <Progress value={dataToRender.team_score} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Growth Score</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span><Info size={14} className="text-muted-foreground" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Based on growth rate and annual ROI.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="font-medium">{dataToRender.growth_score}/100</span>
+                  </div>
+                  <Progress value={dataToRender.growth_score} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Market Score</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span><Info size={14} className="text-muted-foreground" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Based on market size and competition.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="font-medium">{dataToRender.market_score}/100</span>
+                  </div>
+                  <Progress value={dataToRender.market_score} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Product Score</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span><Info size={14} className="text-muted-foreground" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Based on product readiness and innovation.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="font-medium">{dataToRender.product_score}/100</span>
+                  </div>
+                  <Progress value={dataToRender.product_score} className="h-2" />
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <BenchmarkComparisonCard />
+        </div>
+      )}
       
       <Card>
         <div className="p-4 border-b border-border">

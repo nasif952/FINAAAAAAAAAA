@@ -28,7 +28,7 @@ interface ValuationData {
   last_year_ebitda: number | null;
   industry_multiple: number | null;
   annual_roi: number | null;
-  calculation_date: string | null;
+  calculation_date?: string | null;
   companies: CompanyData | null;
 }
 
@@ -157,24 +157,21 @@ export function useValuation() {
     }
   });
   
-  // Mutation for recalculating valuation based on questionnaire data
+  // Mutation for recalculating valuation based on questionnaire data (NOW USES DB DATA)
   const recalculateValuationMutation = useMutation({
-    mutationFn: async (id: string) => {
-      if (!data?.companies?.id) {
-        console.error("Company data missing for valuation calculation");
-        throw new Error("Company data is required for valuation calculation");
+    mutationFn: async () => { 
+      if (!data || !data.companies) {
+        console.error("Valuation or Company data missing for valuation calculation");
+        throw new Error("Valuation and Company data is required for valuation calculation");
       }
       
       setCalculationStatus('calculating');
-      console.log("Starting valuation calculation for company:", data.companies.id);
+      console.log("Starting valuation calculation using DB data for company:", data.companies.id);
       
       try {
-        // Calculate valuation based on questionnaire data
-        // This now includes updating the annual_roi field directly
-        const results = await calculateValuation(id, data.companies.id);
-        console.log("Calculation results:", results);
+        const results = await calculateValuation(data, data.companies); 
+        console.log("Calculation results (from DB data):", results);
         
-        // Store valuation methods in local state
         setValuationMethods({
           scorecard: results.scorecard,
           checklist: results.checklistMethod,
@@ -184,8 +181,7 @@ export function useValuation() {
           weights: results.methodologyWeights
         });
         
-        // Update the valuation in the database (only the numeric values)
-        await updateValuationWithResults(id, results);
+        await updateValuationWithResults(data.id, results, data.selected_valuation ?? undefined); 
         console.log("Updated valuation with results");
         
         setCalculationStatus('done');
@@ -203,7 +199,6 @@ export function useValuation() {
         description: "Your startup's valuation has been updated based on questionnaire data."
       });
       
-      // Reset status after a delay
       setTimeout(() => setCalculationStatus('idle'), 2000);
     },
     onError: (error) => {
@@ -225,14 +220,14 @@ export function useValuation() {
   
   // Function to recalculate the valuation
   const recalculateValuation = () => {
-    if (data) {
-      console.log("Recalculating valuation for id:", data.id);
-      recalculateValuationMutation.mutate(data.id);
+    if (data && data.companies) {
+      console.log("Recalculating valuation using DB data for id:", data.id);
+      recalculateValuationMutation.mutate(); 
     } else {
-      console.error("Cannot recalculate: no valuation data available");
+      console.error("Cannot recalculate: no valuation or company data available");
       toast({
         title: "Cannot recalculate",
-        description: "No valuation data available to recalculate",
+        description: "Valuation or Company data not available to recalculate",
         variant: "destructive"
       });
     }
